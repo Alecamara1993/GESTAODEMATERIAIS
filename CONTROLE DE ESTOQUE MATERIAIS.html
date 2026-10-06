@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle | Gestão de Estoque & Histórico</title>
+    <!-- Fontes e Ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1240px; margin: 0 auto; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 24px; padding: 20px 24px; background: white; border-radius: 12px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border);
+        }
+
+        /* KPIs Dashboard */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-info h4 { font-size: 0.8rem; color: var(--secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .kpi-info p { font-size: 1.8rem; font-weight: 700; margin-top: 4px; }
+        .kpi-icon {
+            width: 48px; height: 48px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* Navegação e Ações Globais */
+        .toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+        }
+
+        .tabs { display: flex; gap: 8px; }
+        .tab-btn { 
+            padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; 
+            font-weight: 600; background: #e2e8f0; color: var(--secondary); transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .view-content { display: none; }
+        .view-content.active { display: block; }
+
+        /* Componentes de Form e Tabela */
+        .card { background: var(--card); padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border); }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+        label { font-size: 0.82rem; font-weight: 600; color: var(--secondary); }
+        input, select, textarea { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 0.9rem; }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        
+        button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 0.88rem; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-main:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-icon { padding: 8px; width: 34px; height: 34px; border-radius: 6px; }
+
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8fafc; padding: 12px 14px; text-align: left; font-size: 0.78rem; color: var(--secondary); text-transform: uppercase; font-weight: 700; border-bottom: 1px solid var(--border); }
+        td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; vertical-align: middle; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .bg-in { background: #dcfce7; color: #15803d; }
+        .bg-out { background: #fee2e2; color: #b91c1c; }
+        .badge-cat { background: #e0f2fe; color: #0369a1; }
+        .status-low { color: var(--danger); font-weight: bold; }
+
+        /* Modais */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: 0.2s ease-in-out;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: white; border-radius: 12px; width: 100%; max-width: 480px;
+            padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            transform: translateY(-15px); transition: 0.2s ease-in-out;
+        }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-header h3 { font-size: 1.15rem; font-weight: 700; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .action-btns { justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <div>
+            <h1>Controle de <span style="color: var(--primary)">Estoque</span></h1>
+            <p style="color: var(--secondary); font-size: 0.85rem; margin-top: 2px;">Desenvolvido por Alessandro Câmara</p>
+        </div>
+        <div style="text-align: right">
+            <h3 id="clock">00:00:00</h3>
+            <small id="date" style="color: var(--secondary)"></small>
+        </div>
+    </header>
+
+    <!-- Cards de Métricas Executivas (KPIs) -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h4>Total de Produtos</h4>
+                <p id="kpiTotalItems">0</p>
+            </div>
+            <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="fas fa-boxes"></i>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h4>Itens Críticos</h4>
+                <p id="kpiCriticalItems" style="color: var(--danger)">0</p>
+            </div>
+            <div class="kpi-icon" style="background: #fee2e2; color: #dc2626;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-info">
+                <h4>Movimentações (Mês)</h4>
+                <p id="kpiMonthMoves">0</p>
+            </div>
+            <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Ferramentas / Backup -->
+    <div class="toolbar">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('estoque', event)"><i class="fas fa-boxes"></i> Estoque Atual</button>
+            <button class="tab-btn" onclick="switchTab('historico', event)"><i class="fas fa-history"></i> Histórico</button>
+        </div>
+
+        <div class="action-btns">
+            <button class="btn-secondary" onclick="exportJSON()"><i class="fas fa-download"></i> Backup (JSON)</button>
+            <button class="btn-secondary" onclick="document.getElementById('importFileInput').click()"><i class="fas fa-upload"></i> Restaurar (JSON)</button>
+            <button class="btn-secondary" onclick="exportCSV()"><i class="fas fa-file-excel"></i> Exportar CSV</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importJSON(event)">
+        </div>
+    </div>
+
+    <!-- ABA 1: ESTOQUE ATUAL -->
+    <div id="estoque" class="view-content active">
+        <div class="card">
+            <h3 style="margin-bottom: 15px; font-size: 1.05rem;"><i class="fas fa-plus-circle" style="color: var(--primary)"></i> Novo Cadastro</h3>
+            <div class="flex-row">
+                <div class="input-group">
+                    <label for="itemName">Nome do Item *</label>
+                    <input type="text" id="itemName" placeholder="Ex: Caderno Corporativo">
+                </div>
+                <div class="input-group">
+                    <label for="itemCategory">Categoria</label>
+                    <select id="itemCategory">
+                        <option value="Escritório / Papelaria">Escritório / Papelaria</option>
+                        <option value="Informática / Eletrônicos">Informática / Eletrônicos</option>
+                        <option value="Brindes / Endomarketing">Brindes / Endomarketing</option>
+                        <option value="Vestuário / Uniformes">Vestuário / Uniformes</option>
+                        <option value="Higiene / Limpeza">Higiene / Limpeza</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="input-group" style="max-width: 130px;">
+                    <label for="itemQty">Qtd Inicial</label>
+                    <input type="number" id="itemQty" value="0" min="0">
+                </div>
+                <div class="input-group" style="max-width: 130px;">
+                    <label for="itemMin">Mínimo</label>
+                    <input type="number" id="itemMin" value="5" min="0">
+                </div>
+                <button class="btn-main" onclick="addItem()"><i class="fas fa-check"></i> Cadastrar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h3 style="font-size: 1.05rem;"><i class="fas fa-list-ul" style="color: var(--primary)"></i> Inventário</h3>
+                <div style="width: 280px;">
+                    <input type="text" id="searchInventory" onkeyup="renderInventory()" placeholder="🔎 Buscar por item ou categoria..." style="width: 100%;">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Saldo</th>
+                            <th>Mínimo</th>
+                            <th>Status</th>
+                            <th style="text-align: center;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 2: HISTÓRICO -->
+    <div id="historico" class="view-content">
+        <div class="card">
+            <h3 style="margin-bottom: 15px; font-size: 1.05rem;"><i class="fas fa-filter" style="color: var(--primary)"></i> Filtros de Busca</h3>
+            <div class="flex-row">
+                <div class="input-group">
+                    <label for="filterInput">Buscar por Colaborador, Item ou Obs</label>
+                    <input type="text" id="filterInput" onkeyup="renderHistory()" placeholder="Digite para filtrar...">
+                </div>
+                <div class="input-group" style="max-width: 200px;">
+                    <label for="filterType">Tipo de Movimentação</label>
+                    <select id="filterType" onchange="renderHistory()">
+                        <option value="ALL">Todos</option>
+                        <option value="ENTRADA">Entradas</option>
+                        <option value="SAÍDA">Saídas</option>
+                    </select>
+                </div>
+                <button onclick="clearHistory()" class="btn-danger"><i class="fas fa-trash-alt"></i> Limpar Histórico</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Colaborador</th>
+                            <th>Item</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th>Qtd</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 1: REGISTRAR MOVIMENTAÇÃO -->
+<div id="moveModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="moveModalTitle">Registrar Movimentação</h3>
+            <button onclick="closeModal('moveModal')" class="btn-secondary btn-icon"><i class="fas fa-times"></i></button>
+        </div>
+        <div>
+            <p style="margin-bottom: 15px; color: var(--secondary); font-size: 0.9rem;">
+                Produto: <strong id="moveItemName" style="color: var(--text);">---</strong>
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group">
+                    <label for="moveUser">Responsável / Colaborador *</label>
+                    <input type="text" id="moveUser" placeholder="Ex: Carlos Andrade">
+                </div>
+                <div class="input-group">
+                    <label for="moveQty">Quantidade *</label>
+                    <input type="number" id="moveQty" min="1" value="1">
+                </div>
+                <div class="input-group">
+                    <label for="moveObs">Observação (Opcional)</label>
+                    <input type="text" id="moveObs" placeholder="Ex: Evento X, Avaria, Doação...">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeModal('moveModal')" class="btn-secondary">Cancelar</button>
+            <button onclick="confirmMoveStock()" class="btn-main" id="btnConfirmMove">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: EDIÇÃO DE PRODUTO -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Editar Item do Estoque</h3>
+            <button onclick="closeModal('editModal')" class="btn-secondary btn-icon"><i class="fas fa-times"></i></button>
+        </div>
+        <div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group">
+                    <label for="editName">Nome do Item *</label>
+                    <input type="text" id="editName">
+                </div>
+                <div class="input-group">
+                    <label for="editCategory">Categoria</label>
+                    <select id="editCategory">
+                        <option value="Escritório / Papelaria">Escritório / Papelaria</option>
+                        <option value="Informática / Eletrônicos">Informática / Eletrônicos</option>
+                        <option value="Brindes / Endomarketing">Brindes / Endomarketing</option>
+                        <option value="Vestuário / Uniformes">Vestuário / Uniformes</option>
+                        <option value="Higiene / Limpeza">Higiene / Limpeza</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="editMin">Estoque Mínimo *</label>
+                    <input type="number" id="editMin" min="0">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeModal('editModal')" class="btn-secondary">Cancelar</button>
+            <button onclick="confirmEditItem()" class="btn-main">Salvar Alterações</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ESTADO E PERSISTÊNCIA
+    let inventory = JSON.parse(localStorage.getItem('rh_inventory_db')) || [];
+    let history = JSON.parse(localStorage.getItem('rh_history_db')) || [];
+
+    // Variáveis auxiliares para controle de estado dos Modais
+    let currentMoveIndex = null;
+    let currentMoveType = null;
+    let currentEditIndex = null;
+
+    // SEGURANÇA: Prevenção contra Cross-Site Scripting (XSS)
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // CONTROLADORES DE ABAS
+    function switchTab(tabId, evt) {
+        document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    // CONTROLADORES DE MODAIS
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    // GERENCIAMENTO DE ESTOQUE
+    function addItem() {
+        const nameInput = document.getElementById('itemName');
+        const qtyInput = document.getElementById('itemQty');
+        const minInput = document.getElementById('itemMin');
+        const categoryInput = document.getElementById('itemCategory');
+
+        const name = nameInput.value.trim();
+        const qty = parseInt(qtyInput.value) || 0;
+        const min = parseInt(minInput.value) || 0;
+        const category = categoryInput.value;
+
+        if(!name) return alert("Por favor, informe o nome do produto.");
+
+        inventory.push({ 
+            id: Date.now(), 
+            name, 
+            category, 
+            qty, 
+            min 
+        });
+
+        saveAndRefresh();
+        
+        nameInput.value = '';
+        qtyInput.value = '0';
+        minInput.value = '5';
+    }
+
+    // MODAL DE MOVIMENTAÇÃO (Substituindo o prompt)
+    function openMoveModal(index, type) {
+        currentMoveIndex = index;
+        currentMoveType = type;
+
+        const item = inventory[index];
+        document.getElementById('moveModalTitle').innerText = type === 'ENTRADA' ? '📥 Registrar Entrada' : '📤 Registrar Saída';
+        document.getElementById('moveItemName').innerText = `${item.name} (Atual: ${item.qty})`;
+        document.getElementById('moveUser').value = '';
+        document.getElementById('moveQty').value = 1;
+        document.getElementById('moveObs').value = '';
+
+        openModal('moveModal');
+    }
+
+    function confirmMoveStock() {
+        const user = document.getElementById('moveUser').value.trim();
+        const amount = parseInt(document.getElementById('moveQty').value);
+        const obs = document.getElementById('moveObs').value.trim();
+
+        if(!user) return alert("Informe o nome do colaborador responsável.");
+        if(isNaN(amount) || amount <= 0) return alert("Quantidade inválida.");
+
+        const item = inventory[currentMoveIndex];
+
+        if(currentMoveType === 'SAÍDA' && item.qty < amount) {
+            return alert("Saldo insuficiente em estoque!");
+        }
+
+        // Atualização do Saldo
+        item.qty += (currentMoveType === 'ENTRADA' ? amount : -amount);
+
+        // Registro no Histórico
+        history.unshift({
+            timestamp: Date.now(),
+            date: new Date().toLocaleString('pt-BR'),
+            user: user.toUpperCase(),
+            item: item.name,
+            category: item.category || 'Geral',
+            type: currentMoveType,
+            amount: amount,
+            obs: obs
+        });
+
+        closeModal('moveModal');
+        saveAndRefresh();
+    }
+
+    // MODAL DE EDIÇÃO DE ITEM
+    function openEditModal(index) {
+        currentEditIndex = index;
+        const item = inventory[index];
+
+        document.getElementById('editName').value = item.name;
+        document.getElementById('editCategory').value = item.category || 'Escritório / Papelaria';
+        document.getElementById('editMin').value = item.min;
+
+        openModal('editModal');
+    }
+
+    function confirmEditItem() {
+        const name = document.getElementById('editName').value.trim();
+        const category = document.getElementById('editCategory').value;
+        const min = parseInt(document.getElementById('editMin').value);
+
+        if(!name) return alert("O nome do item é obrigatório.");
+        if(isNaN(min) || min < 0) return alert("Estoque mínimo inválido.");
+
+        inventory[currentEditIndex].name = name;
+        inventory[currentEditIndex].category = category;
+        inventory[currentEditIndex].min = min;
+
+        closeModal('editModal');
+        saveAndRefresh();
+    }
+
+    function deleteItem(index) {
+        if(confirm(`Deseja excluir "${inventory[index].name}" do inventário?`)) {
+            inventory.splice(index, 1);
+            saveAndRefresh();
+        }
+    }
+
+    // RENDERIZAÇÃO DE TABELAS & MÉTRICAS
+    function renderInventory() {
+        const table = document.getElementById('inventoryTable');
+        const filter = (document.getElementById('searchInventory')?.value || '').toUpperCase();
+        table.innerHTML = '';
+
+        const filtered = inventory.filter(item => {
+            const name = (item.name || '').toUpperCase();
+            const cat = (item.category || '').toUpperCase();
+            return name.includes(filter) || cat.includes(filter);
+        });
+
+        if (filtered.length === 0) {
+            table.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--secondary); padding: 20px;">Nenhum produto cadastrado ou encontrado.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach((item) => {
+            const originalIndex = inventory.findIndex(i => i.id === item.id);
+            const isLow = item.qty <= item.min;
+
+            table.innerHTML += `
+                <tr>
+                    <td><strong>${escapeHtml(item.name)}</strong></td>
+                    <td><span class="badge badge-cat">${escapeHtml(item.category || 'Geral')}</span></td>
+                    <td class="${isLow ? 'status-low' : ''}"><strong>${item.qty}</strong></td>
+                    <td>${item.min}</td>
+                    <td><span class="badge ${isLow ? 'bg-out' : 'bg-in'}">${isLow ? 'Repor' : 'OK'}</span></td>
+                    <td style="text-align: center;">
+                        <div style="display:inline-flex; gap:6px">
+                            <button onclick="openMoveModal(${originalIndex}, 'ENTRADA')" class="bg-in btn-icon" title="Entrada"><i class="fas fa-arrow-up"></i></button>
+                            <button onclick="openMoveModal(${originalIndex}, 'SAÍDA')" class="bg-out btn-icon" title="Saída"><i class="fas fa-arrow-down"></i></button>
+                            <button onclick="openEditModal(${originalIndex})" class="btn-secondary btn-icon" title="Editar Item"><i class="fas fa-pencil-alt"></i></button>
+                            <button onclick="deleteItem(${originalIndex})" class="btn-secondary btn-icon" title="Excluir" style="color: var(--danger);"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderHistory() {
+        const table = document.getElementById('historyTable');
+        const filter = (document.getElementById('filterInput')?.value || '').toUpperCase();
+        const typeFilter = document.getElementById('filterType')?.value || 'ALL';
+        table.innerHTML = '';
+
+        const filtered = history.filter(log => {
+            const user = (log.user || '').toUpperCase();
+            const item = (log.item || '').toUpperCase();
+            const obs = (log.obs || '').toUpperCase();
+            const cat = (log.category || '').toUpperCase();
+
+            const matchesSearch = user.includes(filter) || item.includes(filter) || obs.includes(filter) || cat.includes(filter);
+            const matchesType = typeFilter === 'ALL' || log.type === typeFilter;
+
+            return matchesSearch && matchesType;
+        });
+
+        if (filtered.length === 0) {
+            table.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--secondary); padding: 20px;">Nenhuma movimentação encontrada.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(log => {
+            table.innerHTML += `
+                <tr>
+                    <td><small>${escapeHtml(log.date)}</small></td>
+                    <td><strong>${escapeHtml(log.user)}</strong></td>
+                    <td>${escapeHtml(log.item)}</td>
+                    <td><span class="badge badge-cat">${escapeHtml(log.category || 'Geral')}</span></td>
+                    <td><span class="badge ${log.type === 'ENTRADA' ? 'bg-in' : 'bg-out'}">${escapeHtml(log.type)}</span></td>
+                    <td><strong>${log.amount}</strong></td>
+                    <td><small style="color: var(--secondary);">${escapeHtml(log.obs || '-')}</small></td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderKPIs() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const totalItems = inventory.length;
+        const criticalItems = inventory.filter(i => Number(i.qty) <= Number(i.min)).length;
+        
+        const monthMoves = history.filter(h => {
+            if (h.timestamp) {
+                const d = new Date(h.timestamp);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }
+            return true;
+        }).length;
+
+        document.getElementById('kpiTotalItems').innerText = totalItems;
+        document.getElementById('kpiCriticalItems').innerText = criticalItems;
+        document.getElementById('kpiMonthMoves').innerText = monthMoves;
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('rh_inventory_db', JSON.stringify(inventory));
+        localStorage.setItem('rh_history_db', JSON.stringify(history));
+        renderInventory();
+        renderHistory();
+        renderKPIs();
+    }
+
+    function clearHistory() {
+        if(confirm("Deseja apagar TODO o histórico de movimentações? Esta ação não pode ser desfeita.")) {
+            history = [];
+            saveAndRefresh();
+        }
+    }
+
+    // BACKUP & EXPORTAÇÕES
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ inventory, history }, null, 2));
+        const link = document.createElement('a');
+        link.href = dataStr;
+        link.setAttribute('download', `rh_estoque_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (Array.isArray(parsed.inventory) && Array.isArray(parsed.history)) {
+                    if (confirm("Importar este arquivo substituirá todo o estoque e histórico atuais. Deseja continuar?")) {
+                        inventory = parsed.inventory;
+                        history = parsed.history;
+                        saveAndRefresh();
+                        alert("Backup restaurado com sucesso!");
+                    }
+                } else {
+                    alert("Arquivo de backup em formato inválido.");
+                }
+            } catch (err) {
+                alert("Erro ao ler o arquivo de backup.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    function exportCSV() {
+        if (inventory.length === 0) return alert("Não há dados em estoque para exportar.");
+
+        let csvContent = "\uFEFF"; // BOM UTF-8 para correta acentuação no Excel
+        csvContent += "Produto;Categoria;Saldo;Estoque Minimo;Status\n";
+
+        inventory.forEach(item => {
+            const isLow = Number(item.qty) <= Number(item.min);
+            const status = isLow ? "Repor" : "OK";
+            csvContent += `"${item.name.replace(/"/g, '""')}";"${(item.category || 'Geral').replace(/"/g, '""')}";${item.qty};${item.min};"${status}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `estoque_rh_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // RELÓGIO
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString();
+        document.getElementById('date').innerText = now.toLocaleDateString('pt-BR', { dateStyle: 'full' });
+    }, 1000);
+
+    // INICIALIZAÇÃO
+    saveAndRefresh();
+</script>
+
+</body>
+</html>
